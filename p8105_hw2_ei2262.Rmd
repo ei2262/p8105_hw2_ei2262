@@ -4,7 +4,7 @@ output: github_document
 ---
 
 # Problem 0
-```{r load_libraries, echo = FALSE}
+```{r load_libraries, include = FALSE}
 library(tidyverse)
 library(readxl)
 library(lubridate)
@@ -102,25 +102,26 @@ trans_ent %>%
 ### Importing and cleaning up **Mr. Trash Wheel** dataset
 
 ```{r}
-mr_trash_wheel = read_excel('./hw2/Trash-Wheel-Collection-Totals.xlsx', sheet = "Mr. Trash Wheel", range = "A2:N525") %>% 
-  drop_na() %>%  
-  janitor::clean_names() %>% 
+mr_trash_wheel = read_excel('./hw2/Trash-Wheel-Collection-Data.xlsx', sheet = "Mr. Trash Wheel", range = "A2:N550") %>% 
+  janitor::clean_names() %>%
+  drop_na(c("dumpster")) %>% 
   mutate(
     sports_balls = round(as.integer(sports_balls)),
     trash_wheel = as.character("mister")
   )
 ```
 
-The process began with data import. I used `read_excel` to import the Excel file and selected the `Mr.Trash Wheel` sheet. When I examined the dataset, there were columns that were non-data entries. I omitted these columns by selecting the appropraite range within the excel sheet to import. 
+The process began with data import. I used `read_excel` to import the Excel file and selected the `Mr.Trash Wheel` sheet. When I examined the dataset, there were columns that were non-data entries. I omitted these columns by selecting the appropriate range within the excel sheet to import. 
 
 I then dropped any rows that had `NA` and did not include dumpster-specific data. I used `janitor::clean_names()` to clean up the variable names. To round the number of sports balls to the nearest integer and convert the result to an integer, I used `mutate` to overwrite the existing `sports_balls` variable and used the `as.integer` and `round` functions.
 
 In order to distinguish this dataset from Professor Trash Wheel, I created the variable `trash_wheel` and labeled all the data in Mr. Trash Wheel as `mister`.
 
+
 ### Importing, Cleaning, and Organizing data for Professor Trash Wheel
 
 ```{r}
-professor_trash_wheel = read_excel('./hw2/Trash-Wheel-Collection-Totals.xlsx', sheet = "Professor Trash Wheel", range = "A2:N117") %>% 
+professor_trash_wheel = read_excel('./hw2/Trash-Wheel-Collection-Data.xlsx', sheet = "Professor Trash Wheel", range = "A2:N117") %>% 
   drop_na() %>%  
   janitor::clean_names() %>% 
   mutate(
@@ -129,11 +130,12 @@ professor_trash_wheel = read_excel('./hw2/Trash-Wheel-Collection-Totals.xlsx', s
   )
 ```
 
-In order to produce a single, tidy dataset, I applied the same importing, cleaning, and organizing steps used on Mr. Trash Wheel's dataset to the Professor Trash Wheel's dataset. The only difference is the variable `trash_wheel`, which was created to reflect each dataset. 
+In order to produce a single, tidy dataset, I applied the same importing, cleaning, and organizing steps used on Mr. Trash Wheel's dataset to the Professor Trash Wheel's dataset. The only difference is the variable `trash_wheel`, which is labeled `professor` for the Professor Trash Wheel observations.
+
 
 #### Producing a Single, Tidy Dataset: Mr. Trash Wheel and Professor Trash Wheel
 
-```{r}
+```{r, collapse = TRUE}
 combined_trash_wheel = full_join(
   x = mr_trash_wheel, 
   y = professor_trash_wheel, 
@@ -141,7 +143,7 @@ combined_trash_wheel = full_join(
 
 combined_trash_wheel
 ```
-`combined_trash_wheel` is the single, tidy dataset that was created after combining  `mr_trash_wheel` and `professor_trash_wheel` using `full_join`. There are 15 variables and 517 observations in `combined_trash_wheel`. Key variables include `trash_wheel`, used to distinguish which dataset the observation belongs to (`mr_trash_wheel` or `professor_trash_wheel`), `dumpster`, identifies each dumpster,`date` of collection, which ranges from *`r min(combined_trash_wheel$date)`* to *`r max(combined_trash_wheel$date)`*, and `weight_tons`, which is the weight of litter (in tons) contained in each dumpster. Other variables include the type of litter collected, such as plastic bottles, polystyrene, cigarette butts, glass bottles, and grocery bags,the number of `homes_powered` after waste is taken to energy plants, which ranges from `r min(combined_trash_wheel$homes_powered)` to `r max(round(combined_trash_wheel$homes_powered, digits = 1))`.
+`combined_trash_wheel` is the single, tidy dataset that was created after combining  `mr_trash_wheel` and `professor_trash_wheel` using `full_join`. There are 15 variables and 517 observations in `combined_trash_wheel`. Key variables include `trash_wheel`, used to distinguish which dataset the observation belongs to (`mr_trash_wheel` or `professor_trash_wheel`), `dumpster`, identification of each dumpster, `date` of collection, which ranges from *`r min(combined_trash_wheel$date)`* to *`r max(combined_trash_wheel$date)`*, and `weight_tons`, which is the weight of litter (in tons) contained in each dumpster. Other variables include the type of litter collected, such as plastic bottles, polystyrene, cigarette butts, glass bottles, and grocery bags,the number of `homes_powered` after waste is taken to energy plants, which ranges from `r min(combined_trash_wheel$homes_powered)` to `r max(round(combined_trash_wheel$homes_powered, digits = 1))`.
 
 
 ##### What was the total weight of trash collected by Professor Trash Wheel?
