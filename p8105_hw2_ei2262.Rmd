@@ -4,7 +4,7 @@ output: github_document
 ---
 
 # Problem 0
-```{r load_libraries}
+```{r load_libraries, echo = FALSE}
 library(tidyverse)
 library(readxl)
 library(lubridate)
@@ -28,13 +28,13 @@ clean_nyctransit =  read_csv(
     entry = as.logical(entry)
   )
 ```
-Importing and cleaning data from `NYC_Transit_Subway_Entrance_And_Exit_Data.csv`:
+Importing and cleaning data from `NYC_Transit_Subway_Entrance_And_Exit_Data.csv`.
 
 ## Problem 1 Solution
 
 Below we import and clean data from `NYC_Transit_Subway_Entrance_And_Exit_Data.csv`. The process begins with data import, updates variable names, and selects the columns that will be used in later parts fo this problem. We update `entry` from `yes` / `no` to a logical variable. As part of data import, we specify that `Route` columns 8-11 should be character for consistency with 1-7.
 
-```{r}
+```{r, results = "hide"}
 trans_ent = 
   read_csv(
     "./hw2/NYC_Transit_Subway_Entrance_And_Exit_Data.csv",
@@ -51,7 +51,7 @@ As it stands, these data are not "tidy": route number should be a variable, as s
 
 The following code chunk selects station name and line, and then uses `distinct()` to obtain all unique combinations. As a result, the number of rows in this dataset is the number of unique stations.
 
-```{r}
+```{r, results = "hide"}
 trans_ent %>% 
   select(station_name, line) %>% 
   distinct
@@ -59,7 +59,7 @@ trans_ent %>%
 
 The next code chunk is similar, but filters according to ADA compliance as an initial step. This produces a dataframe in which the number of rows is the number of ADA compliant stations. 
 
-```{r}
+```{r, results = "hide"}
 trans_ent %>% 
   filter(ada == TRUE) %>% 
   select(station_name, line) %>% 
@@ -68,7 +68,7 @@ trans_ent %>%
 
 To compute the proportion of station entrances / exits without vending allow entrance, we first exclude station entrances that do not allow vending. Then, we focus on the `entry` variable -- this logical, so taking the mean will produce the desired proportion (recall that R will coerce logical to numeric in cases like this).
 
-```{r}
+```{r, results = "hide"}
 trans_ent %>% 
   filter(vending == "NO") %>% 
   pull(entry) %>% 
@@ -77,7 +77,7 @@ trans_ent %>%
 
 Lastly, we write a code chunk to identify stations that serve the A train, and to assess how many of these are ADA compliant. As a first step, we tidy the data as alluded to previously; that is, we convert `route` from wide to long format. After this step, we can use tools from previous parts of the question (filtering to focus on the A train, and on ADA compliance; selecting and using `distinct` to obtain dataframes with the required stations in rows).
 
-```{r}
+```{r, results = "hide"}
 trans_ent %>% 
   pivot_longer(
     route1:route11,
@@ -168,43 +168,70 @@ The total number of sports balls collected by Mr. Trash Wheel in 2020 was **771 
 
 ##### Cleaning the data in `pols.month.csv`
 ```{r}
-pols_month = read_csv("./fivethirtyeight/pols-month.csv") %>% 
+pols = read_csv("./fivethirtyeight/pols-month.csv") %>% 
   janitor::clean_names() %>% 
   separate(mon,c('year', 'month', 'date'),'-') %>% 
   mutate(
     month = as.integer(month),
-    month = month.name[month],
+    month = month.abb[month],
     president = prez_gop + prez_dem
   ) %>% 
   select(-prez_gop,-prez_dem,-date)
 ```
+To clean the data in `pols-month.csv`, I separated the variable `mon` by `year`, `month`, and `date`. I converted the `month` variable into an integer to replace the month number with the abbrevations of each month. Abbreviations was chosen to align with the `unemployment.csv` dataset. I created the new variable `president`, which combines `prez_gop` and `prez_dem`. I used `select` to remove `prez_gop`, `prez_dem`, and `date`.
+
 
 ##### Cleaning the data in `snp.csv`
 ```{r}
 snp = read_csv("./fivethirtyeight/snp.csv") %>% 
   janitor::clean_names() %>% 
-  separate(date,c("month", "date","year"), "/") %>% 
+  mutate(date = as.Date(date, format = "%m/%d/%y")) %>% 
+  separate(date,c("year", "month","date"), "-") %>% 
   mutate(
     month = as.integer(month),
-    month = month.name[month],
-    year = str_glue("20{year}")
+    month = month.abb[month]
   ) %>% 
   select(-date) %>% 
   select(year, month, everything())
 ```
+To clean the data in `snp.csv`, I reformatted the date in the `csv` file to get the year in the format desired ("YYYY"). After reformatting the date, I was able to separate by `year`, `month`, and `date`. In order to convert the month number to abbreviations of the months, I used the same method used for cleaning th `pols-month.csv` dataset. `select` was used to remove `date` and rearrange the columns to have `year` and `month` the first two columns. 
+
 
 ##### Cleaning the data in `unemployment.csv`
+
 ```{r}
 unemployment = read_csv("./fivethirtyeight/unemployment.csv") %>% 
-  janitor::clean_names() %>% 
   pivot_longer(
-    col = !year,
+    col = !Year,
     names_to = "month",
     values_to = "percentage"
   ) %>% 
-  mutate(month = mont)
+  janitor::clean_names()
 ```
+To clean the `unemployment.csv` dataset, I used `pivot_longer` to create a column for the abbreviated `month` names and the `percentage` of unemployment in each associated month and year. The dataset is also in the same arrangement as `pols` and `snp` to ensure the datasets join correctly.
 
- 
+##### Joining `snp`, `pols`, and `unemployment`
 
+```{r}
+fivethirtyeight = left_join(pols, snp, by = c("year", "month"))
+```
+I first joined the `snp` and `pols` dataset by using `left_join` to take observations in `snp` and and merge them into `pols`. I joined the two datasets by columns `year` and `month`.
+
+```{r}
+fivethirtyeight_merged = merge(fivethirtyeight, unemployment, by = c("year", "month"))
+```
+I merged `fivethirtyeight` with `unemployment` using merge. The datasets were merged by `year` and `month`.
+
+
+##### Description of `fivethirtyeight_merged`
+
+`fivethirtyeight_merged` contains three datasets: `pols`, `snp`, and `unemployment`.
+
+1. `pols`: this dataset contains data related to the number of national politicians who are democratic or republican at any given month and year.
+2. `snp`: this dataset contains data related to the closing values of the Standard & Poor's stock market index (S&P) in a specific month and year.
+3. `unemployment`: this dataset contains data related to the percentage of unemployment in a given month of a given year.
+
+*Note: The year 1974 in the `pols` datatset has a value of 2 for the variable `president` because there were 2 presidents in one year. This is when President Nixon resigned and President Ford took office. Both presidents were Republicans.
+
+After combining the three datasets, `fivethirtyeight_merged` contains `r nrow(fivethirtyeight_merged)` rows and `r ncol(fivethirtyeight_merged)` variables. Variables include `r ls(fivethirtyeight_merged)`. The `year` ranges from `r min(fivethirtyeight_merged$year)` to `r max(fivethirtyeight_merged$year)`.
 
