@@ -9,6 +9,7 @@ library(tidyverse)
 library(readxl)
 library(lubridate)
 ```
+*Loading libraries*
 
 # Problem 1
 
@@ -121,11 +122,11 @@ In order to distinguish this dataset from Professor Trash Wheel, I created the v
 ### Importing, Cleaning, and Organizing data for Professor Trash Wheel
 
 ```{r}
-professor_trash_wheel = read_excel('./hw2/Trash-Wheel-Collection-Data.xlsx', sheet = "Professor Trash Wheel", range = "A2:N117") %>% 
-  drop_na() %>%  
+professor_trash_wheel = read_excel('./hw2/Trash-Wheel-Collection-Data.xlsx', sheet = "Professor Trash Wheel", range = "A2:M97") %>%
   janitor::clean_names() %>% 
+  drop_na(c("dumpster")) %>%
   mutate(
-    sports_balls = round(as.integer(sports_balls)),
+    year = as.character(year),
     trash_wheel = as.character("professor")
   )
 ```
@@ -139,11 +140,11 @@ In order to produce a single, tidy dataset, I applied the same importing, cleani
 combined_trash_wheel = full_join(
   x = mr_trash_wheel, 
   y = professor_trash_wheel, 
-  by = c("dumpster", "month", "year", "date", "weight_tons", "volume_cubic_yards", "plastic_bottles", "polystyrene", "cigarette_butts", "glass_bottles", "grocery_bags", "chip_bags", "sports_balls", "homes_powered", "trash_wheel"))
+  by = c("dumpster", "month", "year", "date", "weight_tons", "volume_cubic_yards", "plastic_bottles", "polystyrene", "cigarette_butts", "glass_bottles", "grocery_bags", "chip_bags", "homes_powered", "trash_wheel"))
 
 combined_trash_wheel
 ```
-`combined_trash_wheel` is the single, tidy dataset that was created after combining  `mr_trash_wheel` and `professor_trash_wheel` using `full_join`. There are 15 variables and 517 observations in `combined_trash_wheel`. Key variables include `trash_wheel`, used to distinguish which dataset the observation belongs to (`mr_trash_wheel` or `professor_trash_wheel`), `dumpster`, identification of each dumpster, `date` of collection, which ranges from *`r min(combined_trash_wheel$date)`* to *`r max(combined_trash_wheel$date)`*, and `weight_tons`, which is the weight of litter (in tons) contained in each dumpster. Other variables include the type of litter collected, such as plastic bottles, polystyrene, cigarette butts, glass bottles, and grocery bags,the number of `homes_powered` after waste is taken to energy plants, which ranges from `r min(combined_trash_wheel$homes_powered)` to `r max(round(combined_trash_wheel$homes_powered, digits = 1))`.
+`combined_trash_wheel` is the single, tidy dataset that was created after combining  `mr_trash_wheel` and `professor_trash_wheel` using `full_join`. There are `r ncol(combined_trash_wheel)` variables and `r nrow(combined_trash_wheel)` observations in `combined_trash_wheel`. Key variables include `trash_wheel`, used to distinguish which dataset the observation belongs to (`mr_trash_wheel` or `professor_trash_wheel`), `dumpster`, identification of each dumpster, `date` of collection, which ranges from *`r min(combined_trash_wheel$date)`* to *`r max(combined_trash_wheel$date)`*, and `weight_tons`, which is the weight of litter (in tons) contained in each dumpster. Other variables include the type of litter collected, such as plastic bottles, polystyrene, cigarette butts, glass bottles, and grocery bags, and the number of `homes_powered` after waste is taken to energy plants, which ranges from `r min(combined_trash_wheel$homes_powered, na.rm = TRUE)` to `r max(round(combined_trash_wheel$homes_powered, digits = 1), na.rm = TRUE)`.
 
 
 ##### What was the total weight of trash collected by Professor Trash Wheel?
@@ -153,7 +154,7 @@ combined_trash_wheel %>%
   group_by(trash_wheel == "professor") %>% 
   summarize(sum(weight_tons))
 ```
-The total weight of trash collected by Professor Trash Wheel was **1430 tons**.
+The total weight of trash collected by Professor Trash Wheel was **190 tons**.
 
 
 ##### What was the total number of sports balls collected by Mr. Trash Wheel in 2020?
@@ -163,7 +164,7 @@ combined_trash_wheel %>%
   group_by(trash_wheel == "mister", year == 2020) %>% 
   summarize(sum(sports_balls))
 ```
-The total number of sports balls collected by Mr. Trash Wheel in 2020 was **771 balls**.
+The total number of sports balls collected by Mr. Trash Wheel in 2020 was **856 balls**.
 
 
 # Problem 3
