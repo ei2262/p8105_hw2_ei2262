@@ -7,6 +7,7 @@ output: github_document
 ```{r load_libraries}
 library(tidyverse)
 library(readxl)
+library(lubridate)
 ```
 
 # Problem 1
@@ -165,7 +166,15 @@ The total number of sports balls collected by Mr. Trash Wheel in 2020 was **771 
 
 # Problem 3
 ```{r}
-
+pols_month = read_csv("./fivethirtyeight/pols-month.csv") %>% 
+  janitor::clean_names() %>% 
+  separate(mon,c('year', 'month', 'date'),'-') %>% 
+  mutate(
+    month = as.integer(month),
+    month = month.name[month],
+    president = prez_gop + prez_dem
+  ) %>% 
+  select(-prez_gop,-prez_dem,-date)
 ```
 
  
